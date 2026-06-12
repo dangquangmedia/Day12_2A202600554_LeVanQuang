@@ -1,7 +1,12 @@
 """Production config — 12-Factor: tất cả từ environment variables."""
 import os
 import logging
+from pathlib import Path
 from dataclasses import dataclass, field
+from dotenv import load_dotenv
+
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
 
 @dataclass
@@ -18,7 +23,7 @@ class Settings:
 
     # LLM
     openai_api_key: str = field(default_factory=lambda: os.getenv("OPENAI_API_KEY", ""))
-    llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "gpt-4o-mini"))
+    llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "gpt-5.4-mini"))
 
     # Security
     agent_api_key: str = field(default_factory=lambda: os.getenv("AGENT_API_KEY", "dev-key-change-me"))
@@ -29,12 +34,14 @@ class Settings:
 
     # Rate limiting
     rate_limit_per_minute: int = field(
-        default_factory=lambda: int(os.getenv("RATE_LIMIT_PER_MINUTE", "20"))
+        default_factory=lambda: int(os.getenv("RATE_LIMIT_PER_MINUTE", "10"))
     )
 
     # Budget
-    daily_budget_usd: float = field(
-        default_factory=lambda: float(os.getenv("DAILY_BUDGET_USD", "5.0"))
+    monthly_budget_usd: float = field(
+        default_factory=lambda: float(
+            os.getenv("MONTHLY_BUDGET_USD", os.getenv("DAILY_BUDGET_USD", "10.0"))
+        )
     )
 
     # Storage

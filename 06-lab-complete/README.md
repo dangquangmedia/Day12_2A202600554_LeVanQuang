@@ -26,9 +26,12 @@ Kết hợp TẤT CẢ những gì đã học trong 1 project hoàn chỉnh.
 ├── app/
 │   ├── main.py         # Entry point — kết hợp tất cả
 │   ├── config.py       # 12-factor config
-│   ├── auth.py         # API Key + JWT
-│   ├── rate_limiter.py # Rate limiting
-│   └── cost_guard.py   # Budget protection
+│   ├── auth.py         # API Key verification
+│   ├── rate_limiter.py # Redis-backed rate limiting
+│   ├── cost_guard.py   # Redis-backed budget protection
+│   └── history_store.py# Redis-backed conversation state
+├── utils/
+│   └── mock_llm.py     # Local mock LLM for offline lab runs
 ├── Dockerfile          # Multi-stage, production-ready
 ├── docker-compose.yml  # Full stack
 ├── railway.toml        # Deploy Railway
@@ -50,14 +53,14 @@ cp .env.example .env
 docker compose up
 
 # 3. Test
-curl http://localhost/health
+curl http://localhost:8000/health
 
 # 4. Lấy API key từ .env, test endpoint
 API_KEY=$(grep AGENT_API_KEY .env | cut -d= -f2)
 curl -H "X-API-Key: $API_KEY" \
-     -X POST http://localhost/ask \
+     -X POST http://localhost:8000/ask \
      -H "Content-Type: application/json" \
-     -d '{"question": "What is deployment?"}'
+     -d '{"user_id": "demo-user", "question": "What is deployment?"}'
 ```
 
 ---
@@ -73,6 +76,8 @@ railway login
 railway init
 railway variables set OPENAI_API_KEY=sk-...
 railway variables set AGENT_API_KEY=your-secret-key
+railway variables set REDIS_URL=redis://default:<password>@<host>:<port>
+railway variables set MONTHLY_BUDGET_USD=10.0
 railway up
 
 # Nhận public URL!
@@ -86,7 +91,7 @@ railway domain
 1. Push repo lên GitHub
 2. Render Dashboard → New → Blueprint
 3. Connect repo → Render đọc `render.yaml`
-4. Set secrets: `OPENAI_API_KEY`, `AGENT_API_KEY`
+4. Set secrets: `OPENAI_API_KEY`, `AGENT_API_KEY`, `REDIS_URL`, `MONTHLY_BUDGET_USD`
 5. Deploy → Nhận URL!
 
 ---
@@ -98,3 +103,9 @@ python check_production_ready.py
 ```
 
 Script này kiểm tra tất cả items trong checklist và báo cáo những gì còn thiếu.
+
+## Ghi chú nộp bài
+
+- `POST /ask` hiện yêu cầu JSON dạng `{"user_id": "...", "question": "..."}`.
+- Conversation history, rate limit, và budget state được thiết kế để nằm ngoài process app qua Redis.
+- Trước khi nộp, bổ sung `MISSION_ANSWERS.md`, `DEPLOYMENT.md`, và screenshots bằng kết quả deploy thật.

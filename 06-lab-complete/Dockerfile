@@ -22,8 +22,8 @@ RUN groupadd -r agent && useradd -r -g agent -d /app agent
 
 WORKDIR /app
 
-# Copy packages từ builder
-COPY --from=builder /root/.local /home/agent/.local
+# Copy packages from the builder into the runtime user's site-packages home.
+COPY --from=builder /root/.local /app/.local
 
 # Copy application
 COPY app/ ./app/
@@ -33,8 +33,8 @@ RUN chown -R agent:agent /app
 
 USER agent
 
-ENV PATH=/home/agent/.local/bin:$PATH
-ENV PYTHONPATH=/app
+ENV PATH=/app/.local/bin:$PATH
+ENV PYTHONPATH=/app:/app/.local/lib/python3.11/site-packages
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
